@@ -8,10 +8,11 @@
     "license": "Apache-2.0",
     "config": {
         "preferred-install": "dist"
-    }, 
-     "autoload": {
+    },
+    "autoload": {
         "psr-4": {
-            "phpkit\\thriftrpc\\": "src/"
+            "phpkit\\thriftrpc\\": "./",
+            "Thrift": "./Thrift"
         }
     }
 }
