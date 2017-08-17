@@ -8,20 +8,18 @@ use \Thrift\Protocol\TMultiplexedProtocol;
 use \Thrift\Transport\TFramedTransport;
 use \Thrift\Transport\TSocket;
 
-$GEN_DIR = __DIR__ . '/Structs/gen-php';
-$loader = new ThriftClassLoader();
-$loader->registerNamespace('Thrift', __DIR__);
-$loader->registerNamespace('Swoole', __DIR__);
-$loader->registerNamespace('Services', $GEN_DIR);
-$loader->registerDefinition('Services', $GEN_DIR);
-$loader->register();
-
 class Client {
 
+	public function __construct($dirs = null) {
+		if (!is_array($dirs)) {
+			$this->registerDefinition($dirs);
+		}
+	}
 	public function getProtocol($serviceName) {
 		$socket = new TSocket("127.0.0.1", 8091);
 		$transport = new TFramedTransport($socket);
 		$protocol = new TBinaryProtocol($transport);
+		$transport->open();
 		return $protocol;
 	}
 
