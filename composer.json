@@ -1,4 +1,7 @@
 {
+    "require": {
+        "phpkit/consulapi": "dev-master"
+    },
     "name": "phpkit/thriftrpc",
     "description": "thriftrpc",
     "keywords": [

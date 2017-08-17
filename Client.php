@@ -9,9 +9,8 @@ use \Thrift\Transport\TFramedTransport;
 use \Thrift\Transport\TSocket;
 
 class Client {
-
 	public function __construct($dirs = null) {
-		if (!is_array($dirs)) {
+		if (is_array($dirs)) {
 			$this->registerDefinition($dirs);
 		}
 	}
@@ -34,7 +33,7 @@ class Client {
 	}
 
 	public function registerDefinition($dirs) {
-		$loader = new \Thrift\ClassLoader\ThriftClassLoader();
+		$loader = new \Thrift\ClassLoader\ThriftClassLoader(true);
 		foreach ($dirs as $key => $value) {
 			$loader->registerDefinition($key, $value);
 		}
