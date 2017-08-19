@@ -1,7 +1,4 @@
 {
-    "require": {
-        "phpkit/consulapi": "v1.0"
-    },
     "name": "phpkit/thriftrpc",
     "description": "thriftrpc",
     "keywords": [
