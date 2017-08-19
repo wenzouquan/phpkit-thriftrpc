@@ -10,22 +10,36 @@ use \Thrift\Transport\TFramedTransport;
 use \Thrift\Transport\TSocket;
 
 class Client {
+	protected $time = 0;
+
 	public function __construct($dirs = null) {
 		if (is_array($dirs)) {
 			$this->registerDefinition($dirs);
 		}
 	}
 	public function getProtocol($serviceName, $serviceAddress = "", $servicePort = "") {
-		//随机找到一个服务
-		$consul = new \phpkit\consulapi\Consul();
-		$services = $consul->findService($serviceName);
-		$key = array_rand($services, 1);
-		$serviceAddress = $serviceAddress ? $serviceAddress : $services[$key]['ServiceAddress'];
-		$servicePort = $servicePort ? $servicePort : $services[$key]['ServicePort'];
-		$socket = new TSocket($serviceAddress, $servicePort);
-		$transport = new TFramedTransport($socket);
-		$protocol = new TBinaryProtocol($transport);
-		$transport->open();
+		$this->time++; //尝试次数
+		try {
+			if (!($serviceAddress && $servicePort)) {
+				$consul = new \phpkit\consulapi\Consul();
+				$services = $consul->findService($serviceName);
+				$key = array_rand($services, 1); //随机找到一个服务
+				$serviceAddress = $services[$key]['ServiceAddress'];
+				$servicePort = $services[$key]['ServicePort'];
+			}
+			$socket = new TSocket($serviceAddress, $servicePort);
+			$transport = new TFramedTransport($socket);
+			$protocol = new TBinaryProtocol($transport);
+			$transport->open();
+		} catch (\Exception $e) {
+			if ($this->time > 5) {
+				$this->getProtocol($serviceName, $serviceAddress, $servicePort);
+			} else {
+				throw new \Exception($serviceAddress . ":" . $servicePort . " 连接不上");
+
+			}
+		}
+		$this->time = 0;
 		return $protocol;
 	}
 
@@ -42,7 +56,12 @@ class Client {
 	public function registerDefinition($dirs) {
 		$loader = new \Thrift\ClassLoader\ThriftClassLoader(true);
 		foreach ($dirs as $key => $value) {
-			$loader->registerDefinition($key, $value);
+			if (is_dir($value)) {
+				$loader->registerDefinition($key, $value);
+			} else {
+				throw new \Exception($value . " is not dir");
+
+			}
 		}
 		$loader->register();
 	}
