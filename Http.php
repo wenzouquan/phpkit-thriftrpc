@@ -13,12 +13,16 @@ class Http {
 
 
 
-    protected $XDEBUG_SESSION_START="12087";
+    protected $XDEBUG_SESSION_START;
 
 	public function __construct($host,$port) {
 		 $this->host = $host;
          $this->prot = $port;
 	}
+
+	function setXdebugSession($XDEBUG_SESSION_START){
+	    $this->XDEBUG_SESSION_START = $XDEBUG_SESSION_START;
+    }
 
 	function setHost($host){
 	    $this->host = $host;

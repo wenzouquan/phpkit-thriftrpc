@@ -11,11 +11,14 @@ use \Thrift\Transport\TSocket;
 
 class Client {
     protected $time = 0;
-
+    protected $xdebugSession;
     public function __construct($dirs = null) {
         if (is_array($dirs)) {
             $this->registerDefinition($dirs);
         }
+    }
+    function setXdebugSession($xdebugSession){
+        $this->xdebugSession = $xdebugSession;
     }
     public function getProtocol($serviceName, $serviceAddress = "", $servicePort = "") {
         $this->time++; //尝试次数
@@ -48,6 +51,9 @@ class Client {
         if(strpos($serviceAddress,"http")===0){
             $client = new Http($serviceAddress,$servicePort);
             $client->setServiceName($serviceName);
+            if($this->xdebugSession){
+                $client->setXdebugSession($this->xdebugSession);
+            }
             return $client;
 
         }else{
