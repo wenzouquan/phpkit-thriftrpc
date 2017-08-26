@@ -79,7 +79,7 @@ class Client {
         return  $service[2];
     }
 
-    public function getRPCService($serviceName, $serviceAddress = "", $servicePort = "") {
+    public function getRPCService($serviceName="", $serviceAddress = "", $servicePort = "") {
         //如果使用http来调用请求服务
         if($this->httpDedug==1 || strpos($serviceAddress,"http")===0){
             if(empty($serviceAddress)){
