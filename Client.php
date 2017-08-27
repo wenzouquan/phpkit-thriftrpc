@@ -100,9 +100,22 @@ class Client {
             $client = new $service_class($tMultiplexedProtocol);
             return $client;
         }
-
-
     }
+
+
+    //异步调用
+    public function getAsync($className=""){
+        $serverConfig = require phpkitRoot.'/config/server.php';
+        $rpcAsyncClient = new \phpkit\thriftrpc\Async($className);
+        $rpcAsyncClient->setPort($serverConfig['port']);
+        $rpcAsyncClient->setTcp($serverConfig['ip']);
+        $rpcAsyncClient->setHttpDedug($this->httpDedug);
+        $rpcAsyncClient->setXdebugSession($this->setHttpDedug());
+        $rpcAsyncClient->setHost($serverConfig['http']);
+        return $rpcAsyncClient;
+    }
+
+
 
     public function registerDefinition($dirs) {
         $loader = new \Thrift\ClassLoader\ThriftClassLoader(true);
