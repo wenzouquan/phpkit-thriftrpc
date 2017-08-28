@@ -12,7 +12,7 @@ class Async
     protected $tcp;
     protected $className;
     protected $port;
-protected $host;
+    protected $host;
     protected $httpDedug;
     protected $xdebugSession;
     protected $constructParams = [];
@@ -25,6 +25,7 @@ protected $host;
     public function setHttpDedug($httpDedug)
     {
         $this->httpDedug = $httpDedug;
+        return $this;
     }
 
     /**
@@ -33,6 +34,7 @@ protected $host;
     public function setHost($host)
     {
         $this->host = $host;
+        return $this;
     }
 
     /**
@@ -41,6 +43,7 @@ protected $host;
     public function setXdebugSession($xdebugSession)
     {
         $this->xdebugSession = $xdebugSession;
+        return $this;
     }
 
     /**
@@ -127,68 +130,89 @@ protected $host;
             'args' => $args,
 
         );
-        if($this->httpDedug==1){
-            $this->http($data);
-        }else{
-            $this->swoole(json_encode($data));
+        if ($this->httpDedug == 1) {
+            return $this->http($data);
+        } else {
+            return $this->swoole(json_encode($data));
         }
 
     }
 
-    function swoole($data){
+    function swoole($data)
+    {
         //同步阻塞:SWOOLE_SOCK_SYNC , 异步:SWOOLE_SOCK_ASYNC
-        $client = new \Swoole\Client(SWOOLE_SOCK_TCP, SWOOLE_SOCK_ASYNC);
+        if(PHP_SAPI =='cli'){
+            //设置事件回调函数
+            $client = new \Swoole\Client(SWOOLE_SOCK_TCP, SWOOLE_SOCK_ASYNC);
+            $client->on("connect", function ($cli) use ($data) {
+                $cli->send($data);
+            });
 
-        //设置事件回调函数
+            $client->on("receive", function ($cli, $data) {
+                if (!empty($this->callbacks) && is_array($this->callbacks)) {
+                    foreach ($this->callbacks as $func) {
+                        $func($data);
+                    }
+                }
+                $cli->close();
+            });
+            $client->on("error", function ($cli) {
+                if (!empty($this->errorCallback) && is_array($this->errorCallback)) {
+                    foreach ($this->errorCallback as $func) {
+                        $func("Connect failed\n");
+                    }
+                }
+            });
+            $client->on("close", function ($cli) {
+                echo "Connection close\n";
+            });
+            //发起网络连接
+            $ret = $client->connect($this->tcp, $this->port, 0.5);
+        }else{
+            $fp = stream_socket_client("tcp://{$this->tcp}:{$this->port}", $code, $msg, 3);
+            fwrite($fp, $data);
+            if ((!empty($this->callbacks) && is_array($this->callbacks) )|| ( !empty($this->errorCallback) && is_array($this->errorCallback))) {
+                throw  new \Exception("导步回调必须在PHP CLI 模式下运行。 async-io must be used in PHP CLI mode");
+            }
+        }
 
-        $client->on("connect", function ($cli) use ($data) {
-            $cli->send($data);
-        });
+    }
 
-        $client->on("receive", function ($cli, $data) {
+    function http($params)
+    {
+        $params['XDEBUG_SESSION_START'] = $this->xdebugSession;
+        //  $arg = http_build_query($params);
+
+        $url = trim($this->host, "/")."/async/";
+        $content = $this->mycurl($url, $params);
+        $data = json_decode($content, 1);
+        if ($data) {
             if (!empty($this->callbacks) && is_array($this->callbacks)) {
                 foreach ($this->callbacks as $func) {
                     $func($data);
                 }
             }
-            $cli->close();
-        });
-        $client->on("error", function ($cli) {
+            return $data;
+        } else {
             if (!empty($this->errorCallback) && is_array($this->errorCallback)) {
                 foreach ($this->errorCallback as $func) {
-                    $func("Connect failed\n");
+                    $func($content);
                 }
             }
-        });
-        $client->on("close", function ($cli) {
-            echo "Connection close\n";
-        });
-        //发起网络连接
-        $ret = $client->connect($this->tcp, $this->port, 0.5);
-    }
-
-    function http($params){
-        $params['XDEBUG_SESSION_START'] = $this->XDEBUG_SESSION_START;
-        //  $arg = http_build_query($params);
-        $url =trim($this->host,"/");
-        $content = $this->mycurl($url,$params);
-        $data =json_decode($content,1);
-        if($data){
-            return $data;
-        }else{
             return $content;
         }
     }
 
-    function mycurl($url,$post_file=array()){
+    function mycurl($url, $post_file = array())
+    {
         $ch = curl_init();
         //设置选项，包括URL
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HEADER, 0);
-        if(is_array($post_file)){
+        if (is_array($post_file)) {
             curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $post_file); ////传递一个作为HTTP "POST"操作的所有数据的字符
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post_file)); ////传递一个作为HTTP "POST"操作的所有数据的字符
         }
         //执行并获取HTML文档内容
         $output = curl_exec($ch);

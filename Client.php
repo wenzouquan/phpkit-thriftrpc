@@ -74,6 +74,9 @@ class Client {
             throw new \Exception( "服务发现是基于redis,请先设置redis");
         }
         $services=$this->redis->sMembers($serviceName);
+        if(!is_array($services) || empty($services)){
+            throw new \Exception( $serviceName."服务找不到");
+        }
         $key = array_rand($services, 1); //随机找到一个服务
         $service = explode("@",$services[$key]);
         return  $service[2];
@@ -103,15 +106,11 @@ class Client {
     }
 
 
-    //异步调用
+    //多线程异步调用
     public function getAsync($className=""){
-        $serverConfig = require phpkitRoot.'/config/server.php';
         $rpcAsyncClient = new \phpkit\thriftrpc\Async($className);
-        $rpcAsyncClient->setPort($serverConfig['port']);
-        $rpcAsyncClient->setTcp($serverConfig['ip']);
         $rpcAsyncClient->setHttpDedug($this->httpDedug);
-        $rpcAsyncClient->setXdebugSession($this->setHttpDedug());
-        $rpcAsyncClient->setHost($serverConfig['http']);
+        $rpcAsyncClient->setXdebugSession($this->xdebugSession);
         return $rpcAsyncClient;
     }
 
