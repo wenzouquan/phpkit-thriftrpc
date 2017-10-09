@@ -84,6 +84,10 @@ class Async
         if ($className) {
             $this->className = $className;
         }
+        $xdebugSession = \apc_fetch("XDEBUG_SESSION_START");
+        if($xdebugSession){
+            $this->setXdebugSession($xdebugSession);
+        }
     }
 
     /**

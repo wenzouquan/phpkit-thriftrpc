@@ -19,6 +19,10 @@ class Client {
         if (is_array($dirs)) {
             $this->registerDefinition($dirs);
         }
+        $xdebugSession = \apc_fetch("XDEBUG_SESSION_START");
+        if($xdebugSession){
+            $this->setXdebugSession($xdebugSession);
+        }
     }
     function setXdebugSession($xdebugSession){
         $this->xdebugSession = $xdebugSession;
