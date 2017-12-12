@@ -37,8 +37,8 @@ if (extension_loaded('apcu') && !function_exists('apc_add')) {
 		return $GLOBALS['apcData'][$key];
 	}
 	function apc_fetch($key = "", $success = "") {
-		 $data= $GLOBALS['apcData'][$key];
-		 if($data['exp'] && $data['exp']>time()){
+		 $data= isset($GLOBALS['apcData'][$key])?$GLOBALS['apcData'][$key]:array() ;
+		 if(isset($data['exp']) && $data['exp']>time()){
 		 	return $data['value'];
 		 }else{
 		 	$GLOBALS['apcData'][$key]=array();

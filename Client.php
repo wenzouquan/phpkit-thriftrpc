@@ -45,7 +45,7 @@ class Client {
     }
 
     public function getProtocol($serviceName, $serviceAddress = "", $servicePort = "") {
-        if(empty($this->redis)){
+        if(empty($this->redis) && empty($serviceAddress)){
             throw new \Exception( "服务发现是基于redis,请先设置redis");
         }
         $this->time++; //尝试次数
